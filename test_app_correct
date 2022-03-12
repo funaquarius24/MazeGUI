@@ -1,0 +1,264 @@
+from math import floor
+import sys
+import shutil
+from datetime import datetime
+import os
+
+from turtle import width
+from PyQt6 import QtCore, QtGui, QtWidgets, QtSvgWidgets
+import PyQt6
+from PyQt6.QtWidgets import QVBoxLayout, QFileDialog 
+from PyQt6 import uic
+
+from weave.weave_maze import WeaveMazeGenerator
+from pymaze.maze_manager import MazeManager
+from colormaze.colormaze import ColorMaze
+
+qtcreator_file  = "assets/ui/mainwindow.ui" # Enter file here.
+Ui_MainWindow, QtBaseClass = uic.loadUiType(qtcreator_file)
+
+
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+
+    def __init__(self, *args, **kwargs):
+        QtWidgets.QMainWindow.__init__(self)
+        Ui_MainWindow.__init__(self)
+        self.setupUi(self)
+
+        self.maze = WeaveMazeGenerator()
+        self.maze_style_name = 'weave'
+        self.tab_image_ext = 'svg'
+        self.currentStyleTab = "Style1"
+
+        self.sceneViewer1 = QtSvgWidgets.QSvgWidget()
+        self.sceneViewer1.setGeometry(QtCore.QRect(0,0,800,800))
+        self.sceneViewer1.setParent(self.style1Tab)
+
+        self.sceneViewer2 = QtSvgWidgets.QSvgWidget()
+        self.sceneViewer2.setGeometry(QtCore.QRect(0,0,800,800))
+        self.sceneViewer2.setParent(self.style1Tab)
+
+        self.sceneViewer3 = QtWidgets.QGraphicsView(self.style3Tab)
+        self.scene3 = QtWidgets.QGraphicsScene()
+
+        self.style1Layout = QVBoxLayout(self.style1Tab)
+        self.style1Layout.addWidget(self.sceneViewer1)
+
+        self.style2Layout = QVBoxLayout(self.style2Tab)
+        self.style2Layout.addWidget(self.sceneViewer2)
+
+        self.style3Layout = QVBoxLayout(self.style3Tab)
+        self.style3Layout.addWidget(self.sceneViewer3)
+
+        self.asset_folder = "assets"
+        self.destination_folder = "assets"
+        self.currently_rendered_file = ""
+
+        self.floorColorButton.setStyleSheet("QWidget { background-color: #fff}")
+        self.floorColorButton.setStyleSheet("QWidget { background-color: #000}")
+        self.wall_color = (255, 255, 255)
+        self.floor_color = (0, 0, 0)
+
+
+
+        # print(dir(self.sceneViewer))
+
+
+        
+        # print(dir(self.style1Tab))
+
+        # print(dir(self.style1Tab))
+        self.connectMazeTabs()
+
+        
+        self.connectButtons()
+        self.connectMenuOptions()
+        self.connectEdits()
+
+    def greetings(self, arg):
+        self.widthSpinBox.setValue(10)
+        print(arg)
+
+    def connectButtons(self):
+        self.saveButton.clicked.connect(self.save)
+        self.solveButton.clicked.connect(self.solve)
+        self.generateButton.clicked.connect(self.generate)
+
+        self.floorColorButton.clicked.connect(self.color_picker)
+        self.wallColorButton.clicked.connect(self.color_picker)
+        # self.saveDestinationLineEdit.clicked.connect(self.greetings)
+    
+    def connectMenuOptions(self):
+        self.actionAssetLocation.triggered.connect(self.set_file_locations)
+        self.actionSaveLocation.triggered.connect(self.set_file_locations)
+
+    def connectMazeTabs(self):
+        self.mazeStyleTab.currentChanged.connect(self.tabChanged)
+
+
+    def generate(self):
+        sender = self.sender()
+        # print(dir(self.typeComboBox))
+        maze_width = self.widthSpinBox.value()
+        # print(maze_width)
+        maze_height = self.heightSpinBox.value()
+        maze_type = self.typeComboBox.currentText()
+        # orietation = self.orientationComboBox.currentText()
+        with_loop = self.loopCheckBox.isChecked()
+        number_of_maze =self.numberOfMazeSpinBox.value()
+        # print(maze_width, maze_height, 20, with_loop)
+
+        if self.currentStyleTab == "Style1":
+            print("Reached style1")
+            with_curve = False
+            if maze_type.lower() == 'curved':
+                with_curve = True
+
+            grid = self.maze.render_maze(maze_width, maze_height, density=50, with_loop=with_loop, with_curve=with_curve)
+            self.currently_rendered_file = grid
+            # print('grid')
+            # print(grid)
+            self.sceneViewer1.load(grid)
+            self.sceneViewer1.show()
+        
+        if self.currentStyleTab == "Style2":
+
+            print("Reached style2")
+
+            grid = self.maze.render_maze(maze_width, maze_height, cell_size = 1)
+            self.currently_rendered_file = grid
+            # print('grid')
+            # print(grid)
+            self.sceneViewer2.load(grid)
+            self.sceneViewer2.show()
+
+        if self.currentStyleTab == "Style3":
+
+            print("wall color: ", self.wall_color)
+
+            grid = self.maze.render_maze(maze_width, maze_height, wall_color = self.wall_color, floor_color = self.floor_color, braided = with_loop)
+            self.currently_rendered_file = grid
+            print('grid')
+            print(grid)
+            # self.sceneViewer.setPixmap( QtGui.QPixmap(grid))
+
+            self.image = QtGui.QPixmap()
+            self.image.load(grid)
+            self.image = self.image.scaled(self.style3Tab.width()-20, self.style3Tab.height()-20)
+            self.scene3.addPixmap(self.image)
+            self.sceneViewer3.setScene(self.scene3)
+            self.sceneViewer3.show()
+            # self.sceneViewer.render()
+
+
+        
+    def set_file_locations(self):
+        file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        sender = self.sender()
+
+        if sender.text() == 'Save Location':
+            self.destination_folder = file
+        elif sender.text() == 'Asset Location':
+            self.asset_folder = file
+
+    def solve(self):
+        ...
+    
+    def save(self):
+        filetime = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        dst = self.destination_folder + '/{}'.format(self.maze_style_name)
+        os.makedirs(dst, exist_ok=True)  # succeeds even if directory exists.
+        dst = dst + '/maze-{}.{}'.format(filetime, self.tab_image_ext)
+        shutil.copy2(self.currently_rendered_file, dst)
+
+    def tabChanged(self):
+        sender = self.sender()
+        print(sender.tabText(sender.currentIndex()))
+
+        tab = sender.tabText(sender.currentIndex())
+        self.currentStyleTab = tab
+        if tab == "Style1":
+            self.maze = WeaveMazeGenerator()
+            self.maze_style_name = 'weave'
+            self.tab_image_ext = 'svg'
+
+            # self.sceneViewer1 = QtSvgWidgets.QSvgWidget()
+            # self.sceneViewer.setGeometry(QtCore.QRect(0,0,800,800))
+            # self.sceneViewer.setParent(self.style1Tab)
+
+            # self.layout = QVBoxLayout(self.style1Tab)
+            # self.layout.addWidget(self.sceneViewer)
+            
+        elif tab == "Style2":
+            self.maze = MazeManager()
+            self.maze_style_name = 'pymaze'
+            self.tab_image_ext = 'svg'
+
+            # self.sceneViewer = QtSvgWidgets.QSvgWidget()
+            # self.sceneViewer.setGeometry(QtCore.QRect(0,0,800,800))
+            # self.sceneViewer.setParent(self.style2Tab)
+
+            # self.layout = QVBoxLayout(self.style2Tab)
+            # self.layout.addWidget(self.sceneViewer)
+        elif tab == "Style3":
+            self.maze = ColorMaze()
+            self.maze_style_name = 'colormaze'
+            self.tab_image_ext = 'png'
+
+            # self.sceneViewer = QtWidgets.QGraphicsView(self.style3Tab)
+            # self.scene = QtWidgets.QGraphicsScene()
+
+            # self.layout = QVBoxLayout(self.style3Tab)
+            # self.layout.addWidget(self.sceneViewer)
+            # self.sceneViewer.setScene(self.scene)
+            
+            # self.sceneViewer.move(0,0)
+            
+
+            # self.sceneViewer = QtWidgets.QGraphicsScene(self)
+            # self.sceneViewer.setSceneRect(QtCore.QRectF(0,0,800,800))
+            # self.sceneViewer.setParent(self.style2Tab)
+            # self.sceneViewer.addPixmap()
+            
+            # print(dir(QtGui.QPixmap))
+
+            # print(self.style3Tab.height(), self.style3Tab.width())
+
+        
+        
+    
+    def connectEdits(self):
+        # self.widthSpinBox.
+        self.widthSpinBox.valueChanged.connect(self.setValue)
+        self.heightSpinBox.valueChanged.connect(self.setValue)
+        self.orientationComboBox.currentTextChanged.connect(self.setValue)
+        self.numberOfMazeSpinBox.valueChanged.connect(self.setValue)
+        # print(dir(self.typeComboBox))
+        self.typeComboBox.addItems(["Straight", "Curved"])
+        self.typeComboBox.currentIndexChanged.connect(self.setValue)
+
+    def color_picker(self):
+        sender = self.sender()
+        print(sender.style())
+        color = QtWidgets.QColorDialog.getColor()
+        print('color')
+        print(sender.text())
+        if sender.text() == "Wall Color":
+            self.wall_color = color.getRgb()[0:3]
+            # print(self.wall_color)
+        elif sender.text() == "Floor Color":
+            self.floor_color = color.getRgb()[0:3]
+        # print(color.getRgb()[0:3])
+        sender.setStyleSheet("QWidget { background-color: %s}" % color.name())
+
+    def setValue(self):
+        sender = self.sender()
+
+        
+
+
+app = QtWidgets.QApplication(sys.argv)
+window = MainWindow()
+window.show()
+app.exec()

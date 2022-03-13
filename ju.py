@@ -1,6 +1,4 @@
-def te(**kwargs):
-    if 'test' in kwargs:
-        ter = kwargs['test']
-    print('ok')
+from mazemaker.mazemaker import MazeMaker
+te = MazeMaker()
 
-te(te = "test")
+te.render_maze(10, 10, mask = 'mask.png')

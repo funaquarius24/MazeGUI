@@ -9,6 +9,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets, QtSvgWidgets
 import PyQt6
 from PyQt6.QtWidgets import QVBoxLayout, QFileDialog 
 from PyQt6 import uic
+from mazemaker.mazemaker import MazeMaker
 
 from weave.weave_maze import WeaveMazeGenerator
 from pymaze.maze_manager import MazeManager
@@ -30,6 +31,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tab_image_ext = 'svg'
         self.currentStyleTab = "Style1"
 
+        ### Media Viewers ###
         self.sceneViewer1 = QtSvgWidgets.QSvgWidget()
         self.sceneViewer1.setGeometry(QtCore.QRect(0,0,800,800))
         self.sceneViewer1.setParent(self.style1Tab)
@@ -41,6 +43,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.sceneViewer3 = QtWidgets.QGraphicsView(self.style3Tab)
         self.scene3 = QtWidgets.QGraphicsScene()
 
+        self.sceneViewer4 = QtWidgets.QGraphicsView(self.style4Tab)
+        self.scene4 = QtWidgets.QGraphicsScene()
+
+        ### Media Viewers ###
+
+        ### Layouts ###
         self.style1Layout = QVBoxLayout(self.style1Tab)
         self.style1Layout.addWidget(self.sceneViewer1)
 
@@ -50,9 +58,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.style3Layout = QVBoxLayout(self.style3Tab)
         self.style3Layout.addWidget(self.sceneViewer3)
 
+        self.style4Layout = QVBoxLayout(self.style4Tab)
+        self.style4Layout.addWidget(self.sceneViewer4)
+
+        ### Layouts ###
+
         self.asset_folder = "assets"
         self.destination_folder = "assets"
         self.currently_rendered_file = ""
+        self.mask_file = "mask.png"
 
         self.floorColorButton.setStyleSheet("QWidget { background-color: #fff}")
         self.floorColorButton.setStyleSheet("QWidget { background-color: #000}")
@@ -86,7 +100,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.floorColorButton.clicked.connect(self.color_picker)
         self.wallColorButton.clicked.connect(self.color_picker)
-        # self.saveDestinationLineEdit.clicked.connect(self.greetings)
+        self.maskFileDialogButton.clicked.connect(self.select_mask_file)
     
     def connectMenuOptions(self):
         self.actionAssetLocation.triggered.connect(self.set_file_locations)
@@ -150,6 +164,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.sceneViewer3.show()
             # self.sceneViewer.render()
 
+        if self.currentStyleTab == "Style4":
+            grid = self.maze.render_maze(maze_width, maze_height, mask=self.mask_file)
+            self.currently_rendered_file = grid
+
+            print('grid')
+            print(grid)
+
+            self.image = QtGui.QPixmap()
+            self.image.load(grid)
+            self.image = self.image.scaled(self.style4Tab.width()-20, self.style4Tab.height()-20)
+            self.scene4.addPixmap(self.image)
+            self.sceneViewer4.setScene(self.scene4)
+            self.sceneViewer4.show()
+            # self.sceneViewer.render()
+
 
         
     def set_file_locations(self):
@@ -160,6 +189,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.destination_folder = file
         elif sender.text() == 'Asset Location':
             self.asset_folder = file
+
+    def select_mask_file(self):
+        dialog = QFileDialog()
+        # file = str(QFileDialog.getExistingDirectory(self, "Select The Mask File"))
+        sender = self.sender()
+
+        # dialog.setFileMode(QFileDialog.AnyFile)
+
+        file = dialog.getOpenFileName(self, "Select The Mask File")
+        self.mask_file = file[0]
+        self.maskFileEdit.setText(file[0])
 
     def solve(self):
         ...
@@ -204,6 +244,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif tab == "Style3":
             self.maze = ColorMaze()
             self.maze_style_name = 'colormaze'
+            self.tab_image_ext = 'png'
+
+        elif tab == "Style4":
+            self.maze = MazeMaker()
+            self.maze_style_name = 'mazemaker'
             self.tab_image_ext = 'png'
 
             # self.sceneViewer = QtWidgets.QGraphicsView(self.style3Tab)

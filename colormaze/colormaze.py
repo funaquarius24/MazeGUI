@@ -143,8 +143,8 @@ class ColorMaze:
 
         self.pixelSizeOfTile = 10
 
-        os.makedirs("assets/colormaze/", exist_ok=True)  # succeeds even if directory exists.
-        self.ttenp_folder_name = "assets/colormaze/"
+        os.makedirs("assets/temp_colormaze/", exist_ok=True)  # succeeds even if directory exists.
+        self.temp_folder_name = "assets/temp_colormaze/"
 
 
     def set_options(self, dimensionX, dimensionY, mazeName = "A_Maze"):
@@ -752,10 +752,10 @@ class ColorMaze:
             if len(tempName) > 120:                             #Limiting the length of the filename
                 tempName = tempName[0:120]
             size = ( self.pixelSizeOfTile  * (self.sizeX * 2 + 1),  self.pixelSizeOfTile  * (self.sizeY * 2 + 1))
-            name = self.ttenp_folder_name + tempName +"-"+ str(size[0]) + "_" + str(size[1]) + ".png"
+            name = self.temp_folder_name + tempName +"-"+ str(size[0]) + "_" + str(size[1]) + ".png"
 
             
-        image.save(name,format)
+        image.save(name,format, dpi=(600, 600))
         
         return name
 

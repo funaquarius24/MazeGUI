@@ -57,6 +57,11 @@
       <string>Style3</string>
      </attribute>
     </widget>
+    <widget class="QWidget" name="style4Tab">
+     <attribute name="title">
+      <string>Style4</string>
+     </attribute>
+    </widget>
     <widget class="QWidget" name="manualTab">
      <attribute name="title">
       <string>Manual</string>
@@ -303,6 +308,32 @@
     </property>
     <property name="text">
      <string>Floor Color</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="maskFileDialogButton">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>320</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Mask File</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="maskFileEdit">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>350</y>
+      <width>201</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>File</string>
     </property>
    </widget>
   </widget>

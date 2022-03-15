@@ -49,6 +49,7 @@ maze pdf my_new_maze.pdf
 from ast import arg
 import sys
 import os
+from time import sleep
 import uuid
 from random import randint, seed, shuffle
 from venv import create
@@ -57,6 +58,9 @@ from weave.Maze import Maze
 from renderers.svg import render
 
 from docopt import docopt
+from os import walk
+import numpy as np
+
 
 # constants to aid with describing the passage directions
 N, S, E, W, U = 0x1, 0x2, 0x4, 0x8, 0x10
@@ -67,12 +71,13 @@ OPPOSITE = {E: W, W: E, N: S, S: N}
 
 #
 
-class WeaveMazeGenerator():
+class ManualMazeGenerator():
     def __init__(self) -> None:
         Maze.__init__(self)
         self.path_exists = False
-        os.makedirs("assets/temp_weave/", exist_ok=True)  # succeeds even if directory exists.
-        # file_name = 'assets/temp_weave/temp.svg'
+        os.makedirs("assets/temp_manual/", exist_ok=True)  # succeeds even if directory exists.
+        self.designed_assets_folder = 'assets/test_templates/'
+        self.temp_file_name = 'assets/temp_manual/temp.png'
 
     def create_maze(self, width, height, density, add_a_loop):
         # structures to hold the maze
@@ -260,17 +265,10 @@ class WeaveMazeGenerator():
 
         return_data = {'maze_id': f"{maze_id}"}
 
-        # to pdf, if we have a filename
-        if filename and generate_data or generate_pdf:
-
-            try:
-                from renderers.pdf import render
-            except ImportError:
-                from maze.renderers.pdf import render  # NOQA
-
-            return_data['pdf'] = render(grid, render_options)
-
+        
         # to screen
+        dislay_to_screen = True
+        print("reached")
         if dislay_to_screen:
             try:
                 from renderers.text import render
@@ -279,62 +277,80 @@ class WeaveMazeGenerator():
 
             render(grid, render_options)
 
-        if generate_canvas_js:
-            try:
-                from renderers.canvas import render
-            except ImportError:
-                from maze.renderers.canvas import render  # NOQA
-
-            return_data['canvas'] = render(grid, render_options)
-            if filename and not generate_data:
-                with open(filename, 'w') as f:
-                    f.write(return_data['canvas'])
-
-        if generate_js or generate_data:
-            try:
-                from renderers.js import render
-            except ImportError:
-                from maze.renderers.js import render  # NOQA
-
-            return_data['js'] = render(grid, render_options)
-            if filename and not generate_data:
-                with open(filename, 'w') as f:
-                    f.write(return_data['js'])
-
-        if generate_svg or generate_data:
-            try:
-                from renderers.svg import render
-            except ImportError:
-                from maze.renderers.svg import render  # NOQA
-
-            return_data['svg'] = render(grid, render_options)
-            if filename and not generate_data:
-                with open(filename, 'w') as f:
-                    f.write(return_data['svg'])
-
+        
         return return_data
 
     def render_maze(self, width, height, **kwargs): #, density=50, add_a_loop=50, with_curve=False):
-        density = kwargs['density']
-        add_a_loop = kwargs['with_loop']
-        with_curve = kwargs['with_curve']
+        if 'density' in kwargs:
+            density = kwargs['density']
+        else:
+            density = 50
+        if 'with_loop' in kwargs:
+            add_a_loop = kwargs['with_loop']
+        else:
+            add_a_loop = False
+        if 'with_curve' in kwargs:
+            with_curve = kwargs['with_curve']
+
+        if 'designed_assets_folder' in kwargs:
+            self.designed_assets_folder = kwargs['designed_assets_folder']
+
+        save_file_name = self.temp_file_name
+
+        # filenames = next(walk(self.designed_assets_folder), (None, None, []))[2]  # [] if no file
+        f = []
+        for (dirpath, dirnames, filenames) in walk(self.designed_assets_folder):
+            f.extend(filenames)
+            break
+        
+        from PIL import Image
+        import imageio 
+        filemap = {}
+        for i in range(len(filenames)):
+            try:
+                number = int(filenames[i][:-4])
+                filemap[number] = Image.open(os.path.join(self.designed_assets_folder, filenames[i]))
+            except ValueError:
+                continue
+            
+            
+        
+        if not 19 in filemap:
+            filemap[19] = filemap[15]
+        if not 28 in filemap:
+            filemap[28] = filemap[15]
+
+        # print(filemap)
+
 
         grid = self.create_maze( width, height, density, add_a_loop)
+        np_grid = np.array(grid)
+        dim = np_grid.shape
 
-        render_options = {'filename': 'test',
-                        'draw_with_curves': with_curve,
-                        'use_A4': True,
-                        'landscape': False,
-                        'width': width,
-                        'height': height}
+        # print(np_grid)
+
+        # try:
+        #     from renderers.text import render
+        # except ImportError:
+        #     from maze.renderers.text import render  # NOQA
+
+        # render(grid, None)
+
+        
+        asset_dim = filemap[0].size
+        im = Image.new("RGBA", (dim[0] * asset_dim[0], dim[1]*asset_dim[1]), None)
+        for i in range(dim[0]):
+            for j in range(dim[1]):
+                # print(np_grid[i, j])
+                to_paste = filemap[np_grid[i, j]]
+                coord = (j * asset_dim[1], i * asset_dim[0])
+                im.paste(to_paste, coord)
+                
+
+        im.save(save_file_name)
+        return save_file_name
 
 
-        return_data = render(grid, render_options)
-        file_name = 'assets/temp_weave/temp.svg'
-        with open(file_name, 'w+') as f:
-            f.write(return_data)
-        return file_name
-    
 
 
 class Tree(object):

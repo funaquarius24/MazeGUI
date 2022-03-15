@@ -14,6 +14,8 @@ from mazemaker.mazemaker import MazeMaker
 from weave.weave_maze import WeaveMazeGenerator
 from pymaze.maze_manager import MazeManager
 from colormaze.colormaze import ColorMaze
+from maskedmazegen.masked_maze_gen import MaskedMazeGenerator
+from manual.manual_maze_gen import ManualMazeGenerator
 
 qtcreator_file  = "assets/ui/mainwindow.ui" # Enter file here.
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qtcreator_file)
@@ -46,6 +48,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.sceneViewer4 = QtWidgets.QGraphicsView(self.style4Tab)
         self.scene4 = QtWidgets.QGraphicsScene()
 
+        self.sceneViewer5 = QtSvgWidgets.QSvgWidget()
+        self.sceneViewer5.setGeometry(QtCore.QRect(0,0,800,800))
+        self.sceneViewer5.setParent(self.style5Tab)
+
+        self.sceneViewerManual = QtWidgets.QGraphicsView(self.manualTab)
+        self.sceneManual = QtWidgets.QGraphicsScene()
+
         ### Media Viewers ###
 
         ### Layouts ###
@@ -60,6 +69,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.style4Layout = QVBoxLayout(self.style4Tab)
         self.style4Layout.addWidget(self.sceneViewer4)
+
+        self.style5Layout = QVBoxLayout(self.style5Tab)
+        self.style5Layout.addWidget(self.sceneViewer5)
+
+        self.manualLayout = QVBoxLayout(self.manualTab)
+        self.manualLayout.addWidget(self.sceneViewerManual)
 
         ### Layouts ###
 
@@ -179,6 +194,30 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.sceneViewer4.show()
             # self.sceneViewer.render()
 
+        if self.currentStyleTab == "Style5":
+            print("Reached style5")
+            grid = self.maze.render_maze(maze_width, maze_height, mask=self.mask_file)
+            self.currently_rendered_file = grid
+            print('grid')
+            print(grid)
+            self.sceneViewer5.load(grid)
+            self.sceneViewer5.show()
+
+        if self.currentStyleTab == "Manual":
+            grid = self.maze.render_maze(maze_width, maze_height, designed_assets_folder=self.asset_folder)
+            self.currently_rendered_file = grid
+
+            print('grid')
+            print(grid)
+
+            self.image = QtGui.QPixmap()
+            self.image.load(grid)
+            self.image = self.image.scaled(self.manualTab.width()-20, self.manualTab.height()-20)
+            self.sceneManual.addPixmap(self.image)
+            self.sceneViewerManual.setScene(self.sceneManual)
+            self.sceneViewerManual.show()
+            # self.sceneViewer.render()
+
 
         
     def set_file_locations(self):
@@ -250,6 +289,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.maze = MazeMaker()
             self.maze_style_name = 'mazemaker'
             self.tab_image_ext = 'png'
+
+        elif tab == "Style5":
+            self.maze = MaskedMazeGenerator()
+            self.maze_style_name = 'masgedmaze'
+            self.tab_image_ext = 'svg'
+
+        elif tab == "Manual":
+            self.maze = ManualMazeGenerator()
+            self.maze_style_name = 'manualmazegen'
+            self.tab_image_ext = 'png'
+
 
             # self.sceneViewer = QtWidgets.QGraphicsView(self.style3Tab)
             # self.scene = QtWidgets.QGraphicsScene()

@@ -79,6 +79,4 @@ def render(grid, options):
 
     print()
 
-    print('te')
-    print(te)
     return te

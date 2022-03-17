@@ -33,14 +33,14 @@
    <widget class="QTabWidget" name="mazeStyleTab">
     <property name="geometry">
      <rect>
-      <x>236</x>
-      <y>39</y>
+      <x>240</x>
+      <y>40</y>
       <width>451</width>
       <height>391</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>5</number>
     </property>
     <widget class="QWidget" name="style1Tab">
      <attribute name="title">
@@ -169,19 +169,6 @@
      </rect>
     </property>
    </widget>
-   <widget class="QLabel" name="label_5">
-    <property name="geometry">
-     <rect>
-      <x>26</x>
-      <y>160</y>
-      <width>71</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Orientation:</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="generateButton">
     <property name="geometry">
      <rect>
@@ -198,13 +185,20 @@
    <widget class="QWidget" name="horizontalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>319</x>
+      <x>239</x>
       <y>440</y>
-      <width>311</width>
+      <width>451</width>
       <height>41</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QPushButton" name="isometricButton">
+       <property name="text">
+        <string>Isometric</string>
+       </property>
+      </widget>
+     </item>
      <item>
       <widget class="QPushButton" name="saveButton">
        <property name="text">
@@ -225,7 +219,7 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>190</y>
+      <y>195</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -244,7 +238,7 @@
     <property name="geometry">
      <rect>
       <x>26</x>
-      <y>190</y>
+      <y>195</y>
       <width>101</width>
       <height>16</height>
      </rect>
@@ -276,17 +270,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>With Loop</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="orientationComboBox">
-    <property name="geometry">
-     <rect>
-      <x>140</x>
-      <y>160</y>
-      <width>69</width>
-      <height>22</height>
-     </rect>
+     <string>With Loop:</string>
     </property>
    </widget>
    <widget class="QPushButton" name="wallColorButton">
@@ -339,6 +323,19 @@
     </property>
     <property name="text">
      <string>File</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="isometricBackgroundButton">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>160</y>
+      <width>130</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Isometric Background</string>
     </property>
    </widget>
   </widget>

@@ -9,7 +9,9 @@ from PyQt6 import QtCore, QtGui, QtWidgets, QtSvgWidgets
 import PyQt6
 from PyQt6.QtWidgets import QVBoxLayout, QFileDialog 
 from PyQt6 import uic
+from sklearn import isotonic
 from mazemaker.mazemaker import MazeMaker
+from renderers import ismoetric
 
 from weave.weave_maze import WeaveMazeGenerator
 from pymaze.maze_manager import MazeManager
@@ -78,15 +80,28 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         ### Layouts ###
 
-        self.asset_folder = "assets"
+        ### Grid Objects ###
+        self.style1_grid_object = None
+        self.style2_grid_object = None
+        self.style3_grid_object = None
+        self.style4_grid_object = None
+        self.style5_grid_object = None
+        self.manual_grid_object = None
+
+        ### Grid Objects ### 
+
+
+        self.asset_folder = "assets/test_templates"
         self.destination_folder = "assets"
         self.currently_rendered_file = ""
         self.mask_file = "mask.png"
 
         self.floorColorButton.setStyleSheet("QWidget { background-color: #fff}")
         self.floorColorButton.setStyleSheet("QWidget { background-color: #000}")
+        self.isometricBackgroundButton.setStyleSheet("QWidget { background-color: #222}")
         self.wall_color = (255, 255, 255)
         self.floor_color = (0, 0, 0)
+        self.isometricBackgroundColor = (10, 10, 10)
 
 
 
@@ -112,10 +127,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.saveButton.clicked.connect(self.save)
         self.solveButton.clicked.connect(self.solve)
         self.generateButton.clicked.connect(self.generate)
+        self.isometricButton.clicked.connect(self.make_isometric)
 
         self.floorColorButton.clicked.connect(self.color_picker)
         self.wallColorButton.clicked.connect(self.color_picker)
         self.maskFileDialogButton.clicked.connect(self.select_mask_file)
+
+        self.isometricBackgroundButton.clicked.connect(self.color_picker)
     
     def connectMenuOptions(self):
         self.actionAssetLocation.triggered.connect(self.set_file_locations)
@@ -218,8 +236,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.sceneViewerManual.show()
             # self.sceneViewer.render()
 
-
-        
     def set_file_locations(self):
         file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
         sender = self.sender()
@@ -250,6 +266,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         os.makedirs(dst, exist_ok=True)  # succeeds even if directory exists.
         dst = dst + '/maze-{}.{}'.format(filetime, self.tab_image_ext)
         shutil.copy2(self.currently_rendered_file, dst)
+
+    def make_isometric(self):
+
+        grid = ismoetric.get_isometric(self.currently_rendered_file, self.isometric_backgrounf_color)
+        self.currently_rendered_file = grid
+
+        self.image = QtGui.QPixmap()
+        self.image.load(grid)
+        self.image = self.image.scaled(self.manualTab.width()-20, self.manualTab.height()-20)
+        self.sceneManual.addPixmap(self.image)
+        self.sceneViewerManual.setScene(self.sceneManual)
+        self.sceneViewerManual.show()
 
     def tabChanged(self):
         sender = self.sender()
@@ -327,7 +355,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # self.widthSpinBox.
         self.widthSpinBox.valueChanged.connect(self.setValue)
         self.heightSpinBox.valueChanged.connect(self.setValue)
-        self.orientationComboBox.currentTextChanged.connect(self.setValue)
+        # self.orientationComboBox.currentTextChanged.connect(self.setValue)
         self.numberOfMazeSpinBox.valueChanged.connect(self.setValue)
         # print(dir(self.typeComboBox))
         self.typeComboBox.addItems(["Straight", "Curved"])
@@ -344,6 +372,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # print(self.wall_color)
         elif sender.text() == "Floor Color":
             self.floor_color = color.getRgb()[0:3]
+        elif sender.text() == "Isometric Background":
+            self.isometric_backgrounf_color = color.getRgb()[0:3]
         # print(color.getRgb()[0:3])
         sender.setStyleSheet("QWidget { background-color: %s}" % color.name())
 

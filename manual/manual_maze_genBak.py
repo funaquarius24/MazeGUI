@@ -303,8 +303,8 @@ class ManualMazeGenerator():
             f.extend(filenames)
             break
         
-        from PIL import Image, ImageDraw
-        from math import floor
+        from PIL import Image
+        import imageio 
         filemap = {}
         for i in range(len(filenames)):
             try:
@@ -319,34 +319,8 @@ class ManualMazeGenerator():
             filemap[19] = filemap[15]
         if not 28 in filemap:
             filemap[28] = filemap[15]
-        
 
         # print(filemap)
-        im_template = filemap[0]
-        sub_width = im_template.size[0] // 3
-        sub_height = im_template.size[1] // 3
-        basewidth = sub_width
-
-        if not 100 in filemap:
-            im_start = Image.new("RGB", (floor(sub_width), floor(sub_height)), (220, 20, 20))
-        else:
-            if filemap[100].size[0] != sub_width or filemap[100].size[1] != sub_height:
-                wpercent = (basewidth/float(filemap[100].size[0]))
-                hsize = int((float(filemap[100].size[1])*float(wpercent)))
-                # im_start = filemap[100].crop((sub_width, sub_width, sub_height*2, sub_height*2))
-                im_start = filemap[100].resize((basewidth,hsize), Image.ANTIALIAS)
-            else:
-                im_start = filemap[100]
-        if not 200 in filemap:
-            im_end = Image.new("RGB", (floor(sub_width), floor(sub_height)), (20, 20, 220))
-        else:
-            if filemap[200].size[0] != sub_width or filemap[200].size[1] != sub_height:
-                wpercent = (basewidth/float(filemap[200].size[0]))
-                hsize = int((float(filemap[200].size[1])*float(wpercent)))
-                # im_end = filemap[200].crop((sub_width, sub_width, sub_height*2, sub_height*2))
-                im_end = filemap[200].resize((basewidth,hsize), Image.ANTIALIAS)
-            else:
-                im_end = filemap[200]
 
 
         grid = self.create_maze( width, height, density, add_a_loop)
@@ -368,20 +342,9 @@ class ManualMazeGenerator():
         for i in range(dim[0]):
             for j in range(dim[1]):
                 # print(np_grid[i, j])
-                coord = (j * asset_dim[1], i * asset_dim[0])
-                
                 to_paste = filemap[np_grid[i, j]]
-                if i == 0 and j == 0:
-                    tmp_paste = to_paste.copy()
-                    tmp_paste.paste(im_start, (sub_width, sub_height))
-                    im.paste(tmp_paste, coord)
-                elif i == dim[0] - 1 and j == dim[1] - 1:
-                    tmp_paste = to_paste.copy()
-                    tmp_paste.paste(im_end, (sub_width, sub_height))
-                    im.paste(tmp_paste, coord)
-                else:
-                    im.paste(to_paste, coord)
-                
+                coord = (j * asset_dim[1], i * asset_dim[0])
+                im.paste(to_paste, coord)
                 
 
         im.save(save_file_name)

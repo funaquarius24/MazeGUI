@@ -40,7 +40,12 @@ def get_isometric(image_path, isometricBackgroundColor=None):
     sys = ceil(tys + tys*y_pix)
     height=0.02*sys;  
 
-    spr = Image.new("RGB", (sxs, sys), (10, 50, 10))
+    if isometricBackgroundColor is not None:
+        background_color = isometricBackgroundColor
+    else:
+        background_color = (10, 50, 10)
+
+    spr = Image.new("RGB", (sxs, sys), background_color)
     sprp = spr.load()
     
     sprp[0, 0] = (200, 200, 3)

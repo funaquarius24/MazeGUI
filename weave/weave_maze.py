@@ -209,8 +209,9 @@ class WeaveMazeGenerator():
             if solution:
                 return solution
     def find_solution(self, grid):
-        sofar = self.search(self, grid, (0, 0),  [(0, 0)], 0)
-        print('Solution ->', sofar)
+        sofar = self.search(grid, (0, 0),  [(0, 0)], 0)
+        # print('Solution ->', sofar)
+        return sofar
 
     def maze(self, args):
         width = int(args['--width'])
@@ -320,6 +321,7 @@ class WeaveMazeGenerator():
         with_curve = kwargs['with_curve']
 
         grid = self.create_maze( width, height, density, add_a_loop)
+        solution = self.find_solution(grid)
 
         render_options = {'filename': 'test',
                         'draw_with_curves': with_curve,
@@ -327,12 +329,21 @@ class WeaveMazeGenerator():
                         'landscape': False,
                         'width': width,
                         'height': height}
-
+        render_options_solution = render_options.copy()
+        render_options_solution['solution'] = solution
 
         return_data = render(grid, render_options)
         file_name = 'assets/temp_weave/temp.svg'
         with open(file_name, 'w+') as f:
             f.write(return_data)
+
+        return_data_solution = render(grid, render_options_solution)
+        
+        file_name_solution = 'assets/temp_weave/temp_solution.svg'
+        with open(file_name_solution, 'w+') as f:
+            f.write(return_data_solution)
+
+        
         return file_name
     
 

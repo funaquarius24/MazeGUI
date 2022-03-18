@@ -34,6 +34,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.maze_style_name = 'weave'
         self.tab_image_ext = 'svg'
         self.currentStyleTab = "Style1"
+        self.hide_and_show_butons("Style1")
 
         ### Media Viewers ###
         self.sceneViewer1 = QtSvgWidgets.QSvgWidget()
@@ -94,22 +95,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.asset_folder = "assets/test_templates"
         self.destination_folder = "assets"
         self.currently_rendered_file = ""
+        self.current_solution_file = ""
         self.mask_file = "mask.png"
 
         self.floorColorButton.setStyleSheet("QWidget { background-color: #fff}")
         self.floorColorButton.setStyleSheet("QWidget { background-color: #000}")
-        self.isometricBackgroundButton.setStyleSheet("QWidget { background-color: #222}")
+        self.isometricBackgroundButton.setStyleSheet("QWidget { background-color: #232}")
         self.wall_color = (255, 255, 255)
         self.floor_color = (0, 0, 0)
-        self.isometricBackgroundColor = (10, 10, 10)
+        self.isometric_background_color = (10, 40, 10)
 
 
 
-        # print(dir(self.sceneViewer))
-
-
-        
-        # print(dir(self.style1Tab))
 
         # print(dir(self.style1Tab))
         self.connectMazeTabs()
@@ -257,20 +254,89 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.maskFileEdit.setText(file[0])
 
     def solve(self):
-        ...
+        filetime = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        dst_path = self.destination_folder + '/{}'.format(self.maze_style_name)
+
+        file_solution = self.currently_rendered_file[:-4] + "_solution" + self.currently_rendered_file[-4:]
+        dst_solution = dst_path + '/maze_solution-{}.{}'.format(filetime, self.tab_image_ext)
+
+        print(file_solution)
+
+        if self.currentStyleTab == "Style1":
+            grid = file_solution
+            self.sceneViewer1.load(grid)
+            self.sceneViewer1.show()
+        
+        if self.currentStyleTab == "Style2":
+
+            print("Reached style2")
+
+            grid = file_solution
+            # print('grid')
+            # print(grid)
+            self.sceneViewer2.load(grid)
+            self.sceneViewer2.show()
+
+        if self.currentStyleTab == "Style3":
+            grid = file_solution
+
+            self.image = QtGui.QPixmap()
+            self.image.load(grid)
+            self.image = self.image.scaled(self.style3Tab.width()-20, self.style3Tab.height()-20)
+            self.scene3.addPixmap(self.image)
+            self.sceneViewer3.setScene(self.scene3)
+            self.sceneViewer3.show()
+            # self.sceneViewer.render()
+
+        if self.currentStyleTab == "Style4":
+            grid = file_solution
+
+            self.image = QtGui.QPixmap()
+            self.image.load(grid)
+            self.image = self.image.scaled(self.style4Tab.width()-20, self.style4Tab.height()-20)
+            self.scene4.addPixmap(self.image)
+            self.sceneViewer4.setScene(self.scene4)
+            self.sceneViewer4.show()
+            # self.sceneViewer.render()
+
+        if self.currentStyleTab == "Style5":
+            grid = file_solution
+
+            self.sceneViewer5.load(grid)
+            self.sceneViewer5.show()
+
+        if self.currentStyleTab == "Manual":
+
+            grid = file_solution
+
+            self.image = QtGui.QPixmap()
+            self.image.load(grid)
+            self.image = self.image.scaled(self.manualTab.width()-20, self.manualTab.height()-20)
+            self.sceneManual.addPixmap(self.image)
+            self.sceneViewerManual.setScene(self.sceneManual)
+            self.sceneViewerManual.show()
+            # self.sceneViewer.render()
     
     def save(self):
         filetime = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-        dst = self.destination_folder + '/{}'.format(self.maze_style_name)
-        os.makedirs(dst, exist_ok=True)  # succeeds even if directory exists.
-        dst = dst + '/maze-{}.{}'.format(filetime, self.tab_image_ext)
+        dst_path = self.destination_folder + '/{}'.format(self.maze_style_name)
+        os.makedirs(dst_path, exist_ok=True)  # succeeds even if directory exists.
+        dst = dst_path + '/maze-{}.{}'.format(filetime, self.tab_image_ext)
         shutil.copy2(self.currently_rendered_file, dst)
 
-    def make_isometric(self):
+        file_solution = self.currently_rendered_file[:-4] + "_solution" + self.currently_rendered_file[-4:]
+        dst_solution = dst_path + '/maze_solution-{}.{}'.format(filetime, self.tab_image_ext)
+        shutil.copy2(file_solution, dst_solution)
 
-        grid = ismoetric.get_isometric(self.currently_rendered_file, self.isometric_backgrounf_color)
-        self.currently_rendered_file = grid
+    def make_isometric(self):
+        print(self.currently_rendered_file)
+
+        grid = ismoetric.get_isometric(self.currently_rendered_file, self.isometric_background_color)
+
+        if grid is not None:
+            self.currently_rendered_file = grid
 
         self.image = QtGui.QPixmap()
         self.image.load(grid)
@@ -289,6 +355,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.maze = WeaveMazeGenerator()
             self.maze_style_name = 'weave'
             self.tab_image_ext = 'svg'
+            self.with_solution = True
 
             # self.sceneViewer1 = QtSvgWidgets.QSvgWidget()
             # self.sceneViewer.setGeometry(QtCore.QRect(0,0,800,800))
@@ -301,6 +368,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.maze = MazeManager()
             self.maze_style_name = 'pymaze'
             self.tab_image_ext = 'svg'
+            self.with_solution = False
 
             # self.sceneViewer = QtSvgWidgets.QSvgWidget()
             # self.sceneViewer.setGeometry(QtCore.QRect(0,0,800,800))
@@ -312,11 +380,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.maze = ColorMaze()
             self.maze_style_name = 'colormaze'
             self.tab_image_ext = 'png'
+            self.with_solution = False
 
         elif tab == "Style4":
             self.maze = MazeMaker()
             self.maze_style_name = 'mazemaker'
             self.tab_image_ext = 'png'
+            self.with_solution = False
 
         elif tab == "Style5":
             self.maze = MaskedMazeGenerator()
@@ -327,6 +397,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.maze = ManualMazeGenerator()
             self.maze_style_name = 'manualmazegen'
             self.tab_image_ext = 'png'
+            self.with_solution = False
 
 
             # self.sceneViewer = QtWidgets.QGraphicsView(self.style3Tab)
@@ -347,6 +418,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # print(dir(QtGui.QPixmap))
 
             # print(self.style3Tab.height(), self.style3Tab.width())
+        self.hide_and_show_butons(tab)
 
         
         
@@ -379,6 +451,86 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def setValue(self):
         sender = self.sender()
+
+        self.saveButton.clicked.connect(self.save)
+        self.solveButton.clicked.connect(self.solve)
+        self.generateButton.clicked.connect(self.generate)
+        self.isometricButton.clicked.connect(self.make_isometric)
+
+        self.floorColorButton.clicked.connect(self.color_picker)
+        self.wallColorButton.clicked.connect(self.color_picker)
+        self.maskFileDialogButton.clicked.connect(self.select_mask_file)
+
+        self.isometricBackgroundButton.clicked.connect(self.color_picker)
+    
+    def hide_and_show_butons(self, style):
+        if style == "Style1":
+            self.loopCheckBox.setEnabled(True)
+            self.typeComboBox.setEnabled(True)
+            self.isometricBackgroundButton.setEnabled(False)
+            self.wallColorButton.setEnabled(False)
+            self.floorColorButton.setEnabled(False)
+            self.maskFileDialogButton.setEnabled(False)
+            
+            self.isometricButton.setVisible(False)
+            
+        elif style == "Style2":
+            self.loopCheckBox.setEnabled(False)
+            self.typeComboBox.setEnabled(False)
+            self.isometricBackgroundButton.setEnabled(False)
+            self.wallColorButton.setEnabled(False)
+            self.floorColorButton.setEnabled(False)
+            self.maskFileDialogButton.setEnabled(False)
+            
+
+            self.isometricButton.setVisible(False)
+
+        elif style == "Style3":
+            self.loopCheckBox.setEnabled(False)
+            self.typeComboBox.setEnabled(False)
+            self.isometricBackgroundButton.setEnabled(False)
+            self.wallColorButton.setEnabled(True)
+            self.floorColorButton.setEnabled(True)
+            self.maskFileDialogButton.setEnabled(False)
+            
+
+            self.isometricButton.setVisible(False)
+
+        elif style == "Style4":
+            self.loopCheckBox.setEnabled(False)
+            self.typeComboBox.setEnabled(False)
+            self.isometricBackgroundButton.setEnabled(False)
+            self.wallColorButton.setEnabled(False)
+            self.floorColorButton.setEnabled(False)
+            self.maskFileDialogButton.setEnabled(True)
+            
+
+            self.isometricButton.setVisible(False)
+
+        elif style == "Style5":
+            self.loopCheckBox.setEnabled(False)
+            self.typeComboBox.setEnabled(False)
+            self.isometricBackgroundButton.setEnabled(False)
+            self.wallColorButton.setEnabled(False)
+            self.floorColorButton.setEnabled(False)
+            self.maskFileDialogButton.setEnabled(True)
+            
+
+            self.isometricButton.setVisible(False)
+
+        elif style == "Manual":
+            self.loopCheckBox.setEnabled(True)
+            self.typeComboBox.setEnabled(True)
+            self.isometricBackgroundButton.setEnabled(True)
+            self.wallColorButton.setEnabled(False)
+            self.floorColorButton.setEnabled(False)
+            self.maskFileDialogButton.setEnabled(False)
+            
+
+            self.isometricButton.setVisible(True)
+
+
+
 
         
 

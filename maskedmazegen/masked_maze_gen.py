@@ -1,9 +1,11 @@
 
 # For Pillow lib
 from __future__ import print_function
+from itertools import count
 
 import sys 
 import os
+from unittest import result
 from numpy import true_divide
 
 try:
@@ -181,7 +183,10 @@ class MazeGenerator:
         self.file_svg_lst    = []
 
         os.makedirs("assets/temp_maskedmazegen/", exist_ok=True)  # succeeds even if directory exists.
+        os.makedirs("assets/maskedmazegen/", exist_ok=True)  # succeeds even if directory exists.
         self.temp_folder_name = "assets/temp_maskedmazegen/"
+        self.save_folder_name = "assets/maskedmazegen/"
+        self.folder_name = self.temp_folder_name
 
         self.mask_dic = mask_dic
 
@@ -318,16 +323,21 @@ class MazeGenerator:
         print("Start generating SVG's ...")
         filename = self.maze_name + "_%06d.svg" % (self.counter)
         self.file_svg_lst.append(filename)
-        filepath = self.temp_folder_name + filename
+        filepath = self.folder_name + filename
         self.init_draw(filepath)
+        count = 0
+        # print("entering while")
         while(True):
-                
+            count += 1
+            
             self.draw_step()
             if self.done == True:
                 for cell in self.cells_inside_mask_lst:
                     cell.show(self.dwg)
                 self.dwg.save()
+                # print("leaving while. count: ", count)
                 break
+        # print("Done generating SVG's ...")
         return filepath
         # print("...ending generating SVG's")
 
@@ -424,9 +434,21 @@ class MaskedMazeGenerator:
         else:
             maze_name      = "maskedmaze"
 
-        cell_len       = 6 # 10 
+        if 'multiple' in kwargs:
+            print("################")
+            multiple = kwargs['multiple']
+            if multiple:
+                maze_number = kwargs['maze_number']
+                maze_name = 'maze-{}'.format(maze_number)
+        else:
+            multiple = False
+
+        if 'cell_len' in kwargs:
+            cell_len = kwargs['cell_len']
+        else:
+            cell_len       = 10 # 10 
         
-        print(color_mask_lst)
+        # print(color_mask_lst)
 
 
         i_init, j_init, mask_dic, mask_img_x_max, mask_img_y_max  = self.process_mask(mask, cell_len, color_mask_lst )
@@ -435,15 +457,19 @@ class MaskedMazeGenerator:
 
         mz_01 = MazeGenerator( i_init=i_init, j_init=j_init, x_max=mask_img_x_max, y_max=mask_img_y_max,
                             cell_len=cell_len, maze_name=maze_name, mask_dic=mask_dic)
-        mz_01.set_seed(1)
+        if multiple:
+            mz_01.folder_name = mz_01.save_folder_name
+        # mz_01.set_seed(1)
         # print("Begin generating.....\n\n\n")
-        return mz_01.generate()
+        result = mz_01.generate()
+        print("Finished generating")
+        return result
  
 
 # This function is to process the last part manually is something goes wrong.
 def manual_n_png_to_anim_gif(png_dir_path_from, anim_gif_dir_path_to, maze_name):
         # n PNG -> 1 anim GIF
-        print("Start manually creating anim GIF from n PNG's ...")
+        # print("Start manually creating anim GIF from n PNG's ...")
         files_png_lst = sorted((fn for fn in os.listdir(png_dir_path_from)))
         counter = 0
         with imageio.get_writer(anim_gif_dir_path_to + maze_name + "_anim.gif", mode='I') as writer:
@@ -454,7 +480,7 @@ def manual_n_png_to_anim_gif(png_dir_path_from, anim_gif_dir_path_to, maze_name)
                 image = imageio.imread(png_dir_path_from + filename_png)
                 writer.append_data(image)
         writer.close()
-        print("...ending manually creating anim GIF from n PNG's")
+        # print("...ending manually creating anim GIF from n PNG's")
 
 
 # def anim_gif_to_mp4(filepath_anim_gif):

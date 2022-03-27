@@ -6,6 +6,7 @@ from select import select
 import sys
 from collections import namedtuple
 from random import choice, seed
+import matplotlib.pyplot as plt
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -73,8 +74,12 @@ class MazeMaker:
         self.cell_grid = np.array([Cell() for _ in range(height * width)]).reshape((height, width))
         self.mask = mask
 
+        self.maze = None
+
         os.makedirs("assets/temp_mazemaker/", exist_ok=True)  # succeeds even if directory exists.
+        os.makedirs("assets/mazemaker/", exist_ok=True)  # succeeds even if directory exists.
         self.temp_folder_name = "assets/temp_mazemaker/"
+        self.save_folder_name = "assets/mazemaker/"
 
     def get_neighbour_cell_indices(self, cell_index):
         """
@@ -150,6 +155,8 @@ class MazeMaker:
         plotter.plot_walls()
         plotter.save_plot(output_filename)
 
+        
+
         return output_filename
 
     def render_maze(self, width, height, **kwargs):
@@ -169,10 +176,26 @@ class MazeMaker:
             height = img.size[1]
 
             start_cell_index = CellIndex(width // 2 , height // 2 )
+        if 'multiple' in kwargs:
+            multiple = kwargs['multiple']
+            maze_number = kwargs['maze_number']
+            output_filename = self.save_folder_name + 'maze-{}.png'.format(maze_number)
+        else:
+            multiple = False
+        
+        if 'cell_size_pixels' in kwargs:
+            cell_size_pixels = kwargs['cell_size_pixels']
+        else:
+            cell_size_pixels = 10
 
-        return self.generate_maze(width, height, output_filename, cell_size_pixels=5, line_width_pixels=1, start_cell_index = start_cell_index, mask = mask)
+        line_width_pixels = int(cell_size_pixels / 5)
 
 
+        generate_result =  self.generate_maze(width, height, output_filename, cell_size_pixels=cell_size_pixels, line_width_pixels=line_width_pixels, start_cell_index = start_cell_index, mask = mask)
+        
+        
+        
+        return generate_result
 
 class MazeVisualizerPIL:
     def __init__(self, maze, cell_size_pixels, line_width_pixels):
@@ -207,7 +230,8 @@ class MazeVisualizerPIL:
                 if cell.walls[Direction.W]:
                     self.draw.line((top_left_pixel, bottom_left_pixel), self.fill_color, self.line_width)
 
+
     def save_plot(self, filename):
-        self.img.save(filename, dpi=(600, 600))
+        self.img.save(filename)
 
 

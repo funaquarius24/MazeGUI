@@ -72,6 +72,7 @@ class WeaveMazeGenerator():
         Maze.__init__(self)
         self.path_exists = False
         os.makedirs("assets/temp_weave/", exist_ok=True)  # succeeds even if directory exists.
+        os.makedirs("assets/weave/", exist_ok=True)  # succeeds even if directory exists.
         # file_name = 'assets/temp_weave/temp.svg'
 
     def create_maze(self, width, height, density, add_a_loop):
@@ -319,8 +320,16 @@ class WeaveMazeGenerator():
         density = kwargs['density']
         add_a_loop = kwargs['with_loop']
         with_curve = kwargs['with_curve']
+        
+        if 'multiple' in kwargs:
+            multiple = kwargs['multiple']
+            maze_number = kwargs['maze_number']
+        else:
+            multiple = False
 
         grid = self.create_maze( width, height, density, add_a_loop)
+        # import numpy as np
+        # print(np.array(grid))
         solution = self.find_solution(grid)
 
         render_options = {'filename': 'test',
@@ -329,17 +338,28 @@ class WeaveMazeGenerator():
                         'landscape': False,
                         'width': width,
                         'height': height}
+        if 'no_start_end' in kwargs and kwargs['no_start_end']:
+            render_options['with_start_end'] = False
         render_options_solution = render_options.copy()
         render_options_solution['solution'] = solution
+        if 'solution_color' in kwargs:
+            if kwargs['solution_color'] is not None:
+                render_options_solution['solution_color'] = '#%02x%02x%02x' % kwargs['solution_color']
+
 
         return_data = render(grid, render_options)
-        file_name = 'assets/temp_weave/temp.svg'
+        if multiple:
+            file_name = 'assets/weave/maze-{}.svg'.format(maze_number)
+            file_name_solution = 'assets/weave/maze-{}_solution.svg'.format(maze_number)
+        else:
+            file_name = 'assets/temp_weave/temp.svg'
+            file_name_solution = 'assets/temp_weave/temp_solution.svg'
         with open(file_name, 'w+') as f:
             f.write(return_data)
-
+    
         return_data_solution = render(grid, render_options_solution)
         
-        file_name_solution = 'assets/temp_weave/temp_solution.svg'
+            
         with open(file_name_solution, 'w+') as f:
             f.write(return_data_solution)
 

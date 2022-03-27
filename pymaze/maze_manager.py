@@ -22,6 +22,7 @@ class MazeManager(object):
         self.media_name = ""
         self.quiet_mode = False
         os.makedirs("assets/temp_pymaze/", exist_ok=True)  # succeeds even if directory exists.
+        os.makedirs("assets/pymaze/", exist_ok=True)  # succeeds even if directory exists.
 
     def add_maze(self, row, col, id=0):
         """Add a maze to the manager. We give the maze an index of
@@ -39,7 +40,7 @@ class MazeManager(object):
             Maze: The newly created maze
         """
 
-        if id is not 0:
+        if id != 0:
             self.mazes.append(Maze(row, col, id))
         else:
             if len(self.mazes) < 1:
@@ -136,19 +137,34 @@ class MazeManager(object):
         vis.show_maze()
 
     def render_maze(self, width, height, **kwargs):
-        """Just show the generation animation and maze"""
+        if 'multiple' in kwargs:
+            multiple = kwargs['multiple']
+            maze_number = kwargs['maze_number']
+            filename = 'assets/pymaze/temp{}'.format(kwargs["maze_number"])
+        else:
+            multiple = False
+            filename = 'assets/temp_pymaze/temp'
+        
         # id = len(self.mazes) - 1
         maze = self.add_maze(height, width)
         print("ID: ", id)
         print("ID: ", self.mazes)
-        filename = 'assets/temp_pymaze/temp'
+        
         self.set_filename(filename)
         cell_size = 1
 
         # To see the unsolved maze, call
         # self.show_maze(maze.id)
         vis = Visualizer(self.get_maze(maze.id), cell_size, self.media_name)
-        return vis.show_maze()
+
+        self.solve_maze(maze.id, "DepthFirstBacktracker")
+
+        generation_file =  vis.show_maze()
+
+        self.show_solution(maze.id)
+
+        return generation_file
+
 
     def show_generation_animation(self, id, cell_size=1):
         vis = Visualizer(self.get_maze(id), cell_size, self.media_name)

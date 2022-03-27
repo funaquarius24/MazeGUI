@@ -25,13 +25,14 @@ def threes(iterator):
 
 class SVGPath(object):
 
-    def __init__(self, colour, stroke_width, opacity, s, draw_with_curves=None, faint=None):
+    def __init__(self, colour, stroke_width, opacity, s, draw_with_curves=None, faint=None, with_start_end=True):
         self.svg = ''
         self.dots = ''
         self.colour = colour
         self.stroke_width = stroke_width
         self.opacity = opacity
         self.faint = faint
+        self.with_start_end = with_start_end
 
         self.S = s
         self.S2 = s / 2.0
@@ -72,7 +73,10 @@ class SVGPath(object):
         self.draw_with_curves = draw_with_curves
 
     def path(self):
-        return f"""<path stroke-opacity="{self.opacity}" stroke-width="{self.stroke_width}" stroke="{self.colour}" d="{self.svg}" /> {self.dots}"""
+        if self.with_start_end:
+            return f"""<path stroke-opacity="{self.opacity}" stroke-width="{self.stroke_width}" stroke="{self.colour}" d="{self.svg}" /> {self.dots}"""
+        else:
+            return f"""<path stroke-opacity="{self.opacity}" stroke-width="{self.stroke_width}" stroke="{self.colour}" d="{self.svg}" /> """
 
     def dot(self, x, y):
         a = self.round(x + self.S2)
@@ -142,11 +146,14 @@ class SVGPathTrace(SVGPath):
         return 'r' if dx < 0 else 'l'
 
     def render(self, grid, trail):
+        # print(trail)
 
         TILES = {'t': {'l': self.t9, 'r': self.t5, 'b': self.t3}, 'l': {'t': self.t9, 'r': self.tc, 'b': self.ta},
                  'r': {'l': self.tc, 't': self.t5, 'b': self.t6}, 'b': {'l': self.ta, 'r': self.t6, 't': self.t3}}
 
         for i, [prev, curr, head] in enumerate(threes(trail)):
+
+            
 
             from_d = self.direction(curr[0] - prev[0], curr[1] - prev[1])
             to_d = self.direction(curr[0] - head[0], curr[1] - head[1])
@@ -170,6 +177,15 @@ class SVGPathTrace(SVGPath):
             dy = (prev[1] - curr[1]) // 2
             coordinates = ((dx + curr[0]) * self.S, (dy + curr[1]) * self.S)
             prev_tile = grid[dy + curr[1]][dx + curr[0]]
+            test_curr = grid[curr[1]][curr[0]]
+            # print('##############')
+            # print("prev tile: ", prev_tile)
+            # print('current: ', curr)
+            # print('prev: ', prev)
+            # print('next: ', head)
+            # print('test curr tile: ', test_curr)
+
+            # print('##############')
 
             if dx == 1 or dx == -1:
                 if prev_tile == 19:
@@ -285,7 +301,7 @@ class SVGPathMazeWalls(SVGPath):
             for i, cell in enumerate(row):
                 x = left_margin + i * self.S
 
-                if (i == 0 and j == 0 or (i == len(row) - 1 and j == len(grid) - 1)):
+                if ((i == 0 and j == 0 or (i == len(row) - 1 and j == len(grid) - 1)) and self.with_start_end):
                     self.dot(x, y)
                 else:
                     TILES[cell](x, y)
@@ -530,6 +546,17 @@ class SVG(object):
         else:
             solution = None
 
+        if 'solution_color' in options:
+            solution_color = options['solution_color']
+        else:
+            solution_color = '#E51919'
+
+        if 'with_start_end' in options:
+            self.with_start_end = options['with_start_end']
+        else:
+            self.with_start_end = True
+        
+
         # print(solution)
         left_margin = 0
 
@@ -551,10 +578,11 @@ class SVG(object):
         self.stroke_width = 2
 
         self.walls = SVGPathMazeWalls('#000000', self.stroke_width, '1.0', s, draw_with_curves=draw_with_curves,
-                                      faint=False)  # Maze walls
-        self.over_trace = SVGPathTrace('#E51919', 5, '1.0', s, draw_with_curves)  # solution
-        self.under_trace = SVGPathTrace('#E51919', 5, '0.2', s, draw_with_curves=draw_with_curves,
-                                        faint=True)  # faint solution lines
+                                      faint=False, with_start_end=self.with_start_end)  # Maze walls
+        # self.over_trace = SVGPathTrace('#E51919', 5, '1.0', s, draw_with_curves)  # solution
+        self.over_trace = SVGPathTrace(solution_color, 5, '1.0', s, draw_with_curves, with_start_end=self.with_start_end)  # solution
+        self.under_trace = SVGPathTrace(solution_color, 5, '0.2', s, draw_with_curves=draw_with_curves,
+                                        faint=True, with_start_end=self.with_start_end)  # faint solution lines
 
         self.width = width
         self.height = height
@@ -573,9 +601,15 @@ class SVG(object):
         head = f"""<svg id="maze" xmlns="http://www.w3.org/2000/svg" {viewBox} width="{w}px" height="{h}px" stroke-width="{self.stroke_width}" fill-opacity="0.0" stroke="black">"""
 
         if self.solution:
-            return f"{head} {self.walls.path()} {self.over_trace.path()} {self.under_trace.path()} {self.dots} </svg>"
+            if self.with_start_end:
+                return f"{head} {self.walls.path()} {self.over_trace.path()} {self.under_trace.path()} {self.dots} </svg>"
+            else:
+                return f"{head} {self.walls.path()} {self.over_trace.path()} {self.under_trace.path()} </svg>"
         else:
-            return f"{head} {self.walls.path()} {self.dots} </svg>"
+            if self.with_start_end:
+                return f"{head} {self.walls.path()} {self.dots} </svg>"
+            else:
+                return f"{head} {self.walls.path()} </svg>"
 
 
 def render(grid, options):

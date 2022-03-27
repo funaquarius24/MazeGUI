@@ -6,10 +6,9 @@ import os
 
 from turtle import width
 from PyQt6 import QtCore, QtGui, QtWidgets, QtSvgWidgets
-import PyQt6
+
 from PyQt6.QtWidgets import QVBoxLayout, QFileDialog 
 from PyQt6 import uic
-from sklearn import isotonic
 from mazemaker.mazemaker import MazeMaker
 from renderers import ismoetric
 
@@ -35,6 +34,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tab_image_ext = 'svg'
         self.currentStyleTab = "Style1"
         self.hide_and_show_butons("Style1")
+        self.with_solution = True
 
         ### Media Viewers ###
         self.sceneViewer1 = QtSvgWidgets.QSvgWidget()
@@ -93,10 +93,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
         self.asset_folder = "assets/test_templates"
+        self.solution_asset_folder = "assets/test_templates_solution"
         self.destination_folder = "assets"
         self.currently_rendered_file = ""
         self.current_solution_file = ""
-        self.mask_file = "mask.png"
+        self.maskedmaze_mask_file = "assets/test_files/masked_maze_gen_mask.png"
+        self.mazemaker_mask_file = "assets/test_files/mask.png"
 
         self.floorColorButton.setStyleSheet("QWidget { background-color: #fff}")
         self.floorColorButton.setStyleSheet("QWidget { background-color: #000}")
@@ -104,13 +106,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.wall_color = (255, 255, 255)
         self.floor_color = (0, 0, 0)
         self.isometric_background_color = (10, 40, 10)
-
-
-
+        self.solution_color = None
 
         # print(dir(self.style1Tab))
         self.connectMazeTabs()
-
         
         self.connectButtons()
         self.connectMenuOptions()
@@ -127,20 +126,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.isometricButton.clicked.connect(self.make_isometric)
 
         self.floorColorButton.clicked.connect(self.color_picker)
+        self.solutionTraceColorButton.clicked.connect(self.color_picker)
         self.wallColorButton.clicked.connect(self.color_picker)
         self.maskFileDialogButton.clicked.connect(self.select_mask_file)
-
+        
         self.isometricBackgroundButton.clicked.connect(self.color_picker)
     
     def connectMenuOptions(self):
         self.actionAssetLocation.triggered.connect(self.set_file_locations)
         self.actionSaveLocation.triggered.connect(self.set_file_locations)
+        self.actionSolutionAssetLocation.triggered.connect(self.set_file_locations)
 
     def connectMazeTabs(self):
         self.mazeStyleTab.currentChanged.connect(self.tabChanged)
 
 
     def generate(self):
+        print("generate")
         sender = self.sender()
         # print(dir(self.typeComboBox))
         maze_width = self.widthSpinBox.value()
@@ -149,7 +151,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         maze_type = self.typeComboBox.currentText()
         # orietation = self.orientationComboBox.currentText()
         with_loop = self.loopCheckBox.isChecked()
-        number_of_maze =self.numberOfMazeSpinBox.value()
+        
+        no_start_end = self.startEndMarkerCheckBox.isChecked()
+        number_of_maze = self.numberOfMazeSpinBox.value()
+        
+        density = self.densitySpinBox.value()
         # print(maze_width, maze_height, 20, with_loop)
 
         if self.currentStyleTab == "Style1":
@@ -157,8 +163,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             with_curve = False
             if maze_type.lower() == 'curved':
                 with_curve = True
+            
+            print("solution color: ", self.solution_color)
 
-            grid = self.maze.render_maze(maze_width, maze_height, density=50, with_loop=with_loop, with_curve=with_curve)
+            if number_of_maze > 1:
+                for i in range(number_of_maze):
+                    grid = self.maze.render_maze(maze_width, maze_height, density=density, with_loop=with_loop, 
+                        with_curve=with_curve, multiple=True, maze_number=i, solution_color=self.solution_color, no_start_end=no_start_end)
+            else:
+                grid = self.maze.render_maze(maze_width, maze_height, density=density, with_loop=with_loop,
+                    with_curve=with_curve, solution_color=self.solution_color, no_start_end=no_start_end)
             self.currently_rendered_file = grid
             # print('grid')
             # print(grid)
@@ -167,9 +181,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         if self.currentStyleTab == "Style2":
 
-            print("Reached style2")
+            if number_of_maze > 1:
+                for i in range(number_of_maze):
+                    grid = self.maze.render_maze(maze_width, maze_height, cell_size = 1, multiple = True, maze_number = i)
+            else:
 
-            grid = self.maze.render_maze(maze_width, maze_height, cell_size = 1)
+                grid = self.maze.render_maze(maze_width, maze_height, cell_size = 1)
             self.currently_rendered_file = grid
             # print('grid')
             # print(grid)
@@ -177,10 +194,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.sceneViewer2.show()
 
         if self.currentStyleTab == "Style3":
+            if number_of_maze > 1:
+                for i in range(number_of_maze):
+                    grid = self.maze.render_maze(
+                        maze_width, maze_height, wall_color = self.wall_color, floor_color = self.floor_color, 
+                        braided = with_loop, multiple=True, maze_number=i)
+            else:
 
-            print("wall color: ", self.wall_color)
-
-            grid = self.maze.render_maze(maze_width, maze_height, wall_color = self.wall_color, floor_color = self.floor_color, braided = with_loop)
+                grid = self.maze.render_maze(maze_width, maze_height, wall_color = self.wall_color, floor_color = self.floor_color, braided = with_loop)
             self.currently_rendered_file = grid
             print('grid')
             print(grid)
@@ -195,7 +216,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # self.sceneViewer.render()
 
         if self.currentStyleTab == "Style4":
-            grid = self.maze.render_maze(maze_width, maze_height, mask=self.mask_file)
+            test_mask = 'assets/test_files/mask.png'
+            cell_size = self.cellSizeSpinBox.value()
+            if number_of_maze > 1:
+                for i in range(number_of_maze):
+                    
+                    grid = self.maze.render_maze(maze_width, maze_height, mask=self.mazemaker_mask_file, multiple=True, maze_number=i, cell_size_pixels=cell_size)
+            else:
+                grid = self.maze.render_maze(maze_width, maze_height, mask=self.mazemaker_mask_file, cell_size_pixels=cell_size)
+
             self.currently_rendered_file = grid
 
             print('grid')
@@ -210,20 +239,39 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # self.sceneViewer.render()
 
         if self.currentStyleTab == "Style5":
-            print("Reached style5")
-            grid = self.maze.render_maze(maze_width, maze_height, mask=self.mask_file)
-            self.currently_rendered_file = grid
+            cell_size = self.cellSizeSpinBox.value()
+            
+            if number_of_maze > 1:
+                for i in range(number_of_maze):
+                    grid = self.maze.render_maze(maze_width, maze_height, mask=self.maskedmaze_mask_file, multiple=True, maze_number=i, cell_len=cell_size)
+            else:
+
+                grid = self.maze.render_maze(maze_width, maze_height, mask=self.maskedmaze_mask_file, cell_len=cell_size)
+            
             print('grid')
             print(grid)
+
+            self.currently_rendered_file = grid
+            
             self.sceneViewer5.load(grid)
             self.sceneViewer5.show()
 
         if self.currentStyleTab == "Manual":
-            grid = self.maze.render_maze(maze_width, maze_height, designed_assets_folder=self.asset_folder)
-            self.currently_rendered_file = grid
 
-            print('grid')
-            print(grid)
+            if number_of_maze > 1:
+                for i in range(number_of_maze):
+                    print(i)
+                    grid = self.maze.render_maze(
+                    maze_width, maze_height, designed_assets_folder=self.asset_folder,
+                    solution_assets_folder=self.solution_asset_folder, density=density, multiple=True, maze_number=i)
+                print('out of for looop')
+            else:
+
+                grid = self.maze.render_maze(
+                    maze_width, maze_height, designed_assets_folder=self.asset_folder,
+                    solution_assets_folder=self.solution_asset_folder, density=density)
+            print("reached here ##########")
+            self.currently_rendered_file = grid
 
             self.image = QtGui.QPixmap()
             self.image.load(grid)
@@ -241,6 +289,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.destination_folder = file
         elif sender.text() == 'Asset Location':
             self.asset_folder = file
+        elif sender.text() == 'Solution Asset Location':
+            self.solution_asset_folder = file
 
     def select_mask_file(self):
         dialog = QFileDialog()
@@ -249,8 +299,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # dialog.setFileMode(QFileDialog.AnyFile)
 
+        
+
         file = dialog.getOpenFileName(self, "Select The Mask File")
-        self.mask_file = file[0]
+        if self.currentStyleTab == 'Style4':
+            self.mazemaker_mask_file = file[0]
+        else:
+            self.maskedmaze_mask_file = file[0]
+
         self.maskFileEdit.setText(file[0])
 
     def solve(self):
@@ -262,8 +318,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         dst_solution = dst_path + '/maze_solution-{}.{}'.format(filetime, self.tab_image_ext)
 
         print(file_solution)
+        if not self.with_solution:
+            return
 
         if self.currentStyleTab == "Style1":
+            
             grid = file_solution
             self.sceneViewer1.load(grid)
             self.sceneViewer1.show()
@@ -326,9 +385,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         dst = dst_path + '/maze-{}.{}'.format(filetime, self.tab_image_ext)
         shutil.copy2(self.currently_rendered_file, dst)
 
-        file_solution = self.currently_rendered_file[:-4] + "_solution" + self.currently_rendered_file[-4:]
-        dst_solution = dst_path + '/maze_solution-{}.{}'.format(filetime, self.tab_image_ext)
-        shutil.copy2(file_solution, dst_solution)
+        if self.with_solution:
+
+            file_solution = self.currently_rendered_file[:-4] + "_solution" + self.currently_rendered_file[-4:]
+            dst_solution = dst_path + '/maze_solution-{}.{}'.format(filetime, self.tab_image_ext)
+            shutil.copy2(file_solution, dst_solution)
 
     def make_isometric(self):
         print(self.currently_rendered_file)
@@ -368,7 +429,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.maze = MazeManager()
             self.maze_style_name = 'pymaze'
             self.tab_image_ext = 'svg'
-            self.with_solution = False
+            self.with_solution = True
 
             # self.sceneViewer = QtSvgWidgets.QSvgWidget()
             # self.sceneViewer.setGeometry(QtCore.QRect(0,0,800,800))
@@ -393,11 +454,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.maze_style_name = 'masgedmaze'
             self.tab_image_ext = 'svg'
 
+            self.with_solution = False
+
         elif tab == "Manual":
             self.maze = ManualMazeGenerator()
             self.maze_style_name = 'manualmazegen'
             self.tab_image_ext = 'png'
-            self.with_solution = False
+            self.with_solution = True
 
 
             # self.sceneViewer = QtWidgets.QGraphicsView(self.style3Tab)
@@ -446,27 +509,31 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.floor_color = color.getRgb()[0:3]
         elif sender.text() == "Isometric Background":
             self.isometric_backgrounf_color = color.getRgb()[0:3]
+        elif sender.text() == "Solution trace color":
+            self.solution_color = color.getRgb()[0:3]
         # print(color.getRgb()[0:3])
         sender.setStyleSheet("QWidget { background-color: %s}" % color.name())
 
     def setValue(self):
         sender = self.sender()
 
-        self.saveButton.clicked.connect(self.save)
-        self.solveButton.clicked.connect(self.solve)
-        self.generateButton.clicked.connect(self.generate)
-        self.isometricButton.clicked.connect(self.make_isometric)
+        # self.saveButton.clicked.connect(self.save)
+        # self.solveButton.clicked.connect(self.solve)
+        # self.generateButton.clicked.connect(self.generate)
+        # self.isometricButton.clicked.connect(self.make_isometric)
 
-        self.floorColorButton.clicked.connect(self.color_picker)
-        self.wallColorButton.clicked.connect(self.color_picker)
-        self.maskFileDialogButton.clicked.connect(self.select_mask_file)
+        # self.floorColorButton.clicked.connect(self.color_picker)
+        # self.wallColorButton.clicked.connect(self.color_picker)
+        # self.maskFileDialogButton.clicked.connect(self.select_mask_file)
 
-        self.isometricBackgroundButton.clicked.connect(self.color_picker)
+        # self.isometricBackgroundButton.clicked.connect(self.color_picker)
+        # self.solutionTraceColorButton.clicked.connect(self.color_picker)
     
     def hide_and_show_butons(self, style):
         if style == "Style1":
             self.loopCheckBox.setEnabled(True)
             self.typeComboBox.setEnabled(True)
+            self.solutionTraceColorButton.setEnabled(True)
             self.isometricBackgroundButton.setEnabled(False)
             self.wallColorButton.setEnabled(False)
             self.floorColorButton.setEnabled(False)
@@ -477,6 +544,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif style == "Style2":
             self.loopCheckBox.setEnabled(False)
             self.typeComboBox.setEnabled(False)
+            self.solutionTraceColorButton.setEnabled(False)
             self.isometricBackgroundButton.setEnabled(False)
             self.wallColorButton.setEnabled(False)
             self.floorColorButton.setEnabled(False)
@@ -488,6 +556,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif style == "Style3":
             self.loopCheckBox.setEnabled(False)
             self.typeComboBox.setEnabled(False)
+            self.solutionTraceColorButton.setEnabled(False)
             self.isometricBackgroundButton.setEnabled(False)
             self.wallColorButton.setEnabled(True)
             self.floorColorButton.setEnabled(True)
@@ -499,6 +568,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif style == "Style4":
             self.loopCheckBox.setEnabled(False)
             self.typeComboBox.setEnabled(False)
+            self.solutionTraceColorButton.setEnabled(False)
             self.isometricBackgroundButton.setEnabled(False)
             self.wallColorButton.setEnabled(False)
             self.floorColorButton.setEnabled(False)
@@ -510,6 +580,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif style == "Style5":
             self.loopCheckBox.setEnabled(False)
             self.typeComboBox.setEnabled(False)
+            self.solutionTraceColorButton.setEnabled(False)
             self.isometricBackgroundButton.setEnabled(False)
             self.wallColorButton.setEnabled(False)
             self.floorColorButton.setEnabled(False)
@@ -521,6 +592,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif style == "Manual":
             self.loopCheckBox.setEnabled(True)
             self.typeComboBox.setEnabled(True)
+            self.solutionTraceColorButton.setEnabled(False)
             self.isometricBackgroundButton.setEnabled(True)
             self.wallColorButton.setEnabled(False)
             self.floorColorButton.setEnabled(False)

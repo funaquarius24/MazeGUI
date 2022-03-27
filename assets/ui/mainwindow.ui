@@ -77,7 +77,7 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>70</y>
+      <y>50</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -105,7 +105,7 @@
     <property name="geometry">
      <rect>
       <x>26</x>
-      <y>70</y>
+      <y>50</y>
       <width>61</width>
       <height>16</height>
      </rect>
@@ -118,7 +118,7 @@
     <property name="geometry">
      <rect>
       <x>26</x>
-      <y>100</y>
+      <y>80</y>
       <width>49</width>
       <height>16</height>
      </rect>
@@ -131,7 +131,7 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>100</y>
+      <y>80</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -150,7 +150,7 @@
     <property name="geometry">
      <rect>
       <x>26</x>
-      <y>130</y>
+      <y>110</y>
       <width>49</width>
       <height>16</height>
      </rect>
@@ -163,7 +163,7 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>130</y>
+      <y>110</y>
       <width>69</width>
       <height>22</height>
      </rect>
@@ -219,7 +219,7 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>195</y>
+      <y>255</y>
       <width>71</width>
       <height>21</height>
      </rect>
@@ -238,7 +238,7 @@
     <property name="geometry">
      <rect>
       <x>26</x>
-      <y>195</y>
+      <y>255</y>
       <width>101</width>
       <height>16</height>
      </rect>
@@ -251,7 +251,7 @@
     <property name="geometry">
      <rect>
       <x>160</x>
-      <y>230</y>
+      <y>190</y>
       <width>41</width>
       <height>20</height>
      </rect>
@@ -264,7 +264,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>230</y>
+      <y>200</y>
       <width>101</width>
       <height>16</height>
      </rect>
@@ -277,7 +277,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>270</y>
+      <y>310</y>
       <width>75</width>
       <height>24</height>
      </rect>
@@ -290,7 +290,7 @@
     <property name="geometry">
      <rect>
       <x>120</x>
-      <y>270</y>
+      <y>310</y>
       <width>75</width>
       <height>24</height>
      </rect>
@@ -303,7 +303,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>320</y>
+      <y>380</y>
       <width>75</width>
       <height>24</height>
      </rect>
@@ -316,7 +316,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>350</y>
+      <y>410</y>
       <width>201</width>
       <height>22</height>
      </rect>
@@ -329,13 +329,116 @@
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>160</y>
+      <y>220</y>
       <width>130</width>
       <height>24</height>
      </rect>
     </property>
     <property name="text">
      <string>Isometric Background</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="densitySpinBox">
+    <property name="geometry">
+     <rect>
+      <x>144</x>
+      <y>280</y>
+      <width>71</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>0</number>
+    </property>
+    <property name="maximum">
+     <number>100</number>
+    </property>
+    <property name="value">
+     <number>50</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>280</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Density:</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="solutionTraceColorButton">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>140</y>
+      <width>130</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Solution trace color</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>170</y>
+      <width>101</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>No Start/End Markers:</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="startEndMarkerCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>170</y>
+      <width>41</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>350</y>
+      <width>49</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Cell Size:</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="cellSizeSpinBox">
+    <property name="geometry">
+     <rect>
+      <x>144</x>
+      <y>350</y>
+      <width>71</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>200</number>
+    </property>
+    <property name="value">
+     <number>10</number>
     </property>
    </widget>
   </widget>
@@ -354,6 +457,7 @@
     </property>
     <addaction name="separator"/>
     <addaction name="actionAssetLocation"/>
+    <addaction name="actionSolutionAssetLocation"/>
     <addaction name="actionSaveLocation"/>
    </widget>
    <addaction name="menuMenu"/>
@@ -367,6 +471,11 @@
   <action name="actionSaveLocation">
    <property name="text">
     <string>Save Location</string>
+   </property>
+  </action>
+  <action name="actionSolutionAssetLocation">
+   <property name="text">
+    <string>Solution Asset Location</string>
    </property>
   </action>
  </widget>

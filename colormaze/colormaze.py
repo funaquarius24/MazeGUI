@@ -3,6 +3,7 @@
     Dependend on Pillow 4.2, a fork of PIL (https://pillow.readthedocs.io/en/4.2.x/index.html)
 """
 import os
+from unicodedata import name
 from PIL import Image,ImageDraw, ImageColor
 import random as rnd
 import re
@@ -144,7 +145,10 @@ class ColorMaze:
         self.pixelSizeOfTile = 10
 
         os.makedirs("assets/temp_colormaze/", exist_ok=True)  # succeeds even if directory exists.
+        os.makedirs("assets/colormaze/", exist_ok=True)  # succeeds even if directory exists.
         self.temp_folder_name = "assets/temp_colormaze/"
+        self.save_folder_name = "assets/colormaze/"
+        self.folder_name = self.temp_folder_name
 
 
     def set_options(self, dimensionX, dimensionY, mazeName = "A_Maze"):
@@ -719,13 +723,22 @@ class ColorMaze:
             colorFloor = kwargs['floor_color']
         # add_a_loop = kwargs['with_loop']
         # with_curve = kwargs['with_curve']
+        if 'multiple' in kwargs:
+            multiple = kwargs['multiple']
+            maze_number = kwargs['maze_number']
+        else:
+            multiple = False
 
         self.set_options(width, height)
-        self.makeMazeGrowTree(weightHigh = 50, weightLow = 55)
+        self.makeMazeGrowTree( weightHigh = 50, weightLow = 55 )
         if braided:
             self.makeMazeBraided()
         mazeImageBW = self.makePP(mode="RGB",colorWall = colorWall,colorFloor =colorFloor)
         # mazeImageBW.show() #can or can not work, see Pillow documentation. For debuging only
+
+        if multiple:
+            name = self.save_folder_name + 'Maze-{}.png'.format(maze_number)
+            return self.saveImage(mazeImageBW, name)
         
         return self.saveImage(mazeImageBW)
     
@@ -752,7 +765,7 @@ class ColorMaze:
             if len(tempName) > 120:                             #Limiting the length of the filename
                 tempName = tempName[0:120]
             size = ( self.pixelSizeOfTile  * (self.sizeX * 2 + 1),  self.pixelSizeOfTile  * (self.sizeY * 2 + 1))
-            name = self.temp_folder_name + tempName +"-"+ str(size[0]) + "_" + str(size[1]) + ".png"
+            name = self.folder_name + tempName +"-"+ str(size[0]) + "_" + str(size[1]) + ".png"
 
             
         image.save(name,format, dpi=(600, 600))

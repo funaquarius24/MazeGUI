@@ -51,7 +51,7 @@ class Visualizer(object):
 
         # Handle any potential saving
         if self.media_filename:
-            file = "{}{}.svg".format(self.media_filename, "_generation")
+            file = "{}{}.svg".format(self.media_filename, "")
             fig.savefig(file, frameon=None)
         
         return file
@@ -127,11 +127,13 @@ class Visualizer(object):
                     fc = (0, circle_num/(len(self.maze.solution_path) - 2*len(list_of_backtrackers)), 0), alpha = 0.4))
 
         # Display the plot to the user
-        plt.show()
+        # plt.show()
 
         # Handle any saving
         if self.media_filename:
-            fig.savefig("{}{}.png".format(self.media_filename, "_solution"), frameon=None)
+            fig.savefig("{}{}.svg".format(self.media_filename, "_solution"), frameon=None)
+
+            print("media filename: ", self.media_filename)
 
     def show_generation_animation(self):
         """Function that animates the process of generating the a maze where path is a list

@@ -52,7 +52,8 @@ import os
 from time import sleep
 import uuid
 from random import randint, seed, shuffle
-from venv import create
+# from venv import create
+import itertools
 
 from weave.Maze import Maze
 from renderers.svg import render
@@ -60,6 +61,9 @@ from renderers.svg import render
 from docopt import docopt
 from os import walk
 import numpy as np
+
+from PIL import Image, ImageDraw
+from math import floor
 
 
 # constants to aid with describing the passage directions
@@ -76,8 +80,11 @@ class ManualMazeGenerator():
         Maze.__init__(self)
         self.path_exists = False
         os.makedirs("assets/temp_manual/", exist_ok=True)  # succeeds even if directory exists.
+        os.makedirs('assets/manualmazegen/', exist_ok=True)  # succeeds even if directory exists.
         self.designed_assets_folder = 'assets/test_templates/'
         self.temp_file_name = 'assets/temp_manual/temp.png'
+        self.temp_solution_file_name = 'assets/temp_manual/temp_solution.png'
+        self.save_folder = 'assets/manualmazegen/'
 
     def create_maze(self, width, height, density, add_a_loop):
         # structures to hold the maze
@@ -214,8 +221,9 @@ class ManualMazeGenerator():
             if solution:
                 return solution
     def find_solution(self, grid):
-        sofar = self.search(self, grid, (0, 0),  [(0, 0)], 0)
-        print('Solution ->', sofar)
+        sofar = self.search(grid, (0, 0),  [(0, 0)], 0)
+        # print('Solution ->', sofar)
+        return sofar
 
     def maze(self, args):
         width = int(args['--width'])
@@ -294,17 +302,42 @@ class ManualMazeGenerator():
 
         if 'designed_assets_folder' in kwargs:
             self.designed_assets_folder = kwargs['designed_assets_folder']
+        
+        if 'solution_assets_folder' in kwargs:
+            self.solution_asset_folder = kwargs['solution_assets_folder']
+        else:
+            self.solution_asset_folder = None
 
-        save_file_name = self.temp_file_name
+        if 'multiple' in kwargs:
+            multiple = kwargs['multiple']
+            maze_number = kwargs['maze_number']
+            save_file_name = self.save_folder + 'maze-{}.png'.format(maze_number)
+            save_solution_file_name = self.save_folder + 'maze-{}_solution.png'.format(maze_number)
+        else:
+            multiple = False
+
+            save_file_name = self.temp_file_name
+            save_solution_file_name = self.temp_solution_file_name
 
         # filenames = next(walk(self.designed_assets_folder), (None, None, []))[2]  # [] if no file
+        grid = self.create_maze( width, height, density, add_a_loop)
+        solution = self.find_solution(grid)
+
+        im = self.create_assets_image(grid)
+        
+        im.save(save_file_name)
+
+        im_solution = self.create_solution_assets_image(im, grid, self.solution_asset_folder, solution)
+        im_solution.save(save_solution_file_name)
+        return save_file_name
+
+    def create_assets_image(self, grid):
+        save_file_name = self.temp_file_name
         f = []
         for (dirpath, dirnames, filenames) in walk(self.designed_assets_folder):
             f.extend(filenames)
             break
-        
-        from PIL import Image, ImageDraw
-        from math import floor
+
         filemap = {}
         for i in range(len(filenames)):
             try:
@@ -349,7 +382,7 @@ class ManualMazeGenerator():
                 im_end = filemap[200]
 
 
-        grid = self.create_maze( width, height, density, add_a_loop)
+        
         np_grid = np.array(grid)
         dim = np_grid.shape
 
@@ -381,11 +414,233 @@ class ManualMazeGenerator():
                     im.paste(tmp_paste, coord)
                 else:
                     im.paste(to_paste, coord)
-                
-                
 
         im.save(save_file_name)
-        return save_file_name
+        return im
+
+    def direction(self, dx, dy):
+        if (dx == 0):
+            return 'b' if dy < 0 else 't'
+        return 'r' if dx < 0 else 'l'
+
+    def pairwise(self, iterable):
+        "s -> (s0, s1), (s1, s2), (s2, s3), ..."
+        a, b = itertools.tee(iterable)
+        next(b, None)
+        return zip(a, b)
+
+
+    def threes(self, iterator):
+        "s -> (s0, s1, s2), (s1, s2, s3), (s2, s3, 4), ..."
+        a, b, c = itertools.tee(iterator, 3)
+        next(b, None)
+        next(c, None)
+        next(c, None)
+        return zip(a, b, c)
+    
+    def create_solution_assets_image(self, im, grid, solution_folder_name, solution=None):
+
+        if solution_folder_name is None:
+            print("No solution folder selected!")
+            return
+        save_file_name = self.temp_file_name
+        # print(solution_folder_name)
+        f = []
+        for (dirpath, dirnames, filenames) in walk(self.designed_assets_folder):
+            f.extend(filenames)
+            break
+
+        f_solution = []
+        for (dirpath, dirnames, solution_filenames) in walk(solution_folder_name):
+            f_solution.extend(solution_filenames)
+            break
+        
+        
+        filemap = {}
+        for i in range(len(filenames)):
+            try:
+                number = int(filenames[i][:-4])
+                filemap[number] = Image.open(os.path.join(self.designed_assets_folder, filenames[i]))
+            except ValueError:
+                continue
+
+        if len(f_solution) == 0:
+            print("No solution files found!")
+            return
+        solution_filemap = {}
+        for i in range(len(solution_filenames)):
+            try:
+                # print("started")
+                
+                filename_full = solution_filenames[i][:-4]
+                filename_split = filename_full.split('_')
+                filename_number = filename_split[0]
+                number = int(filename_number)
+                # print("number: ", number)
+                if len(filename_split) > 1:
+                    # if number == 15:
+                        # print('reached1')
+                    filename_direction = filename_split[1]
+                    if not number in solution_filemap:
+                        solution_filemap[number] = {}
+                    solution_filemap[number][filename_direction] = Image.open(os.path.join(solution_folder_name, solution_filenames[i]))
+                    # print(solution_filemap[number])
+                else:
+                    # if number == 15:
+                    #     print('reached')
+                    solution_filemap[number] = Image.open(os.path.join(solution_folder_name, solution_filenames[i]))
+              
+            except ValueError:
+                continue
+            
+        # print(solution_filemap)
+        
+        if not 19 in filemap:
+            filemap[19] = filemap[15]
+        if not 28 in filemap:
+            filemap[28] = filemap[15]
+
+        if not 19 in solution_filemap:
+            solution_filemap[19] = solution_filemap[15]
+        if not 28 in solution_filemap:
+            solution_filemap[28] = solution_filemap[15]
+        
+
+        # print(filemap)
+        im_template = filemap[0]
+        sub_width = im_template.size[0] // 3
+        sub_height = im_template.size[1] // 3
+        basewidth = sub_width
+
+
+        
+        np_grid = np.array(grid)
+        dim = np_grid.shape
+
+        TILES = {'tb': 's', 'tr': 'se', 'tl': 'sw', 'lt': 'sw', 'rt': 'se',
+                  'bt': 's', 'br': 'ne', 'bl': 'nw', 'lb': 'nw', 'rb': 'ne',
+                  'lr': 'w', 'rl': 'w'
+                  }
+
+        
+
+        # im.show()
+        asset_dim = solution_filemap[0].size
+        # print(solution)
+        # print(np_grid)
+        # print('asset_dim: ', asset_dim)
+
+        visited = [] # keep a list of the coordinates of all visited bridges
+        
+        for i, [prev, curr, head] in enumerate(self.threes(solution)):
+
+            from_d = self.direction(curr[0] - prev[0], curr[1] - prev[1])
+            to_d = self.direction(curr[0] - head[0], curr[1] - head[1])
+            direction = from_d + to_d
+            # print('direction: ', direction)
+
+            dx = (prev[0] - curr[0]) // 2
+            dy = (prev[1] - curr[1]) // 2
+            # print('dx: {}  dy: {}'.format(dx, dy))
+            # coordinates = ((dx + curr[0]) * self.S, (dy + curr[1]) * self.S)
+            # print('coordinates: ', coordinates)
+            prev_tile = grid[dy + curr[1]][dx + curr[0]]
+            # print("prev tile: ", prev_tile)
+            # print("coordinate: ", ((dy + curr[1]), (dx + curr[0])))
+            # print("curr: ", curr)
+
+            prev_coord_row_col = ((dx + curr[0]) ,  (dy + curr[1]))
+            if dx == 1 or dx == -1:
+                if prev_tile == 19 or prev_tile == 28:
+                    coord = ((dx + curr[0]) * asset_dim[1], (dy + curr[1]) * asset_dim[0] )
+                    if prev_coord_row_col in visited:
+                        tmp_to_paste = solution_filemap[prev_tile]['a']
+                    else:
+                        tmp_to_paste = solution_filemap[prev_tile]['w']
+                        visited.append(prev_coord_row_col)
+                        
+                    tmp_paste = tmp_to_paste.copy()
+                    im.paste(tmp_paste, coord)
+
+            if dy == 1 or dy == -1:
+                if prev_tile == 19 or prev_tile == 28:
+                    coord = ((dx + curr[0]) * asset_dim[1], (dy + curr[1]) * asset_dim[0] )
+                    if prev_coord_row_col in visited:
+                        tmp_to_paste = solution_filemap[prev_tile]['a']
+                    else:
+                        tmp_to_paste = solution_filemap[prev_tile]['s']
+                        visited.append(prev_coord_row_col)
+                    
+                    # coord = ((dy + curr[0]) * asset_dim[0], (dx + curr[1]) * asset_dim[1])
+                    tmp_paste = tmp_to_paste.copy()
+                    im.paste(tmp_paste, coord)
+                    
+                    
+                
+
+            # if dy == 1 or dy == -1:
+            #     if prev_tile == 19 and not self.faint:
+            #         self.t3(*coordinates)
+            #     elif prev_tile == 28:
+            #         self.th(*coordinates)
+
+            if i == 0:
+                # Do for the first tile          
+                coord = (0, 0)
+                number = np_grid[0, 0]
+                tmp_to_paste = solution_filemap[number]
+                if not isinstance(tmp_to_paste, dict):
+                    tmp_paste = tmp_to_paste.copy()
+                    im.paste(tmp_paste, coord)
+                else:
+                    for elem in tmp_to_paste.keys():
+                        tmp_paste = tmp_to_paste[elem].copy()
+                        im.paste(tmp_paste, coord)
+            # curr = prev
+            coord = (curr[0] * asset_dim[0], curr[1] * asset_dim[0])
+            number = np_grid[curr[1], curr[0]]
+            tmp_to_paste = solution_filemap[number]
+
+            if not isinstance(tmp_to_paste, dict):
+                # print('curr0: ', curr)
+                
+                # print('number0: ', number)
+                # print('i 0 : ', i)
+                tmp_paste = tmp_to_paste.copy()
+                im.paste(tmp_paste, coord)
+            else:
+                # print('tmp to paste: ', tmp_to_paste.keys())
+                # print('curr: ', curr)
+                
+                # print('number: ', number)
+                # print('i : ', i)
+                
+                direction = from_d + to_d
+                # print('direction: ', direction)
+                
+                direction_tile = TILES[direction]
+                # print('direction_tile: ', direction_tile)
+
+                # if direction_tile not in tmp_to_paste.keys():
+                #     print("is direction in prev: ", solution_filemap[prev_tile])
+                
+                tmp_paste = solution_filemap[number][direction_tile].copy()
+                # for elem in tmp_to_paste.keys():
+                #     tmp_paste = tmp_to_paste[elem].copy()
+                im.paste(tmp_paste, coord)
+
+
+            # print([prev, curr, head])
+            # print('fromd: ', from_d)
+            # print('to_d: ', to_d)
+            # print("i: ", i)
+
+            # coord = 
+            
+        # im.show()
+        
+        return im
+         
 
 
 
